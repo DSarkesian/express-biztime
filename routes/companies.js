@@ -13,13 +13,16 @@ companiesRouter.get("/", async function (req,res){
 
 companiesRouter.get("/:code",
   async function (req, res) {
-    const type = req.query.type;
+    const code = req.params.code;
 
     const results = await db.query(
       `SELECT code, name, description
-               FROM companies
-               WHERE type = $1`, [type]);
-    const company = results.rows;
+                FROM companies
+                WHERE code = $1`, [code]);
+    const company = results.rows[0];
+    console.log("company=", company)
+
+    if (!company) throw new NotFoundError(`No matching company: ${code}`);
     return res.json({ company: company });
 });
 
