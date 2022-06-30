@@ -1,39 +1,85 @@
+"use strict"
 const express = require("express");
 const db = require("../db");
+
 const { NotFoundError, BadRequestError } = require("../expressError");
 const companiesRouter = new express.Router();
 
-companiesRouter.get("/", async function (req,res){
+
+
+/** GET/ - returns `{company:[{code,name},...]} */
+
+companiesRouter.get("/", async function (req, res) {
   const results = await db.query("SELECT code, name FROM companies");
   const companies = results.rows;
-  console.log("is the route working?")
+  console.log("is the route working?");
 
-  return res.json({companies})
-})
+  return res.json({ companies });
+});
+/** GET/[code] - return data about one company
+ * {company:{code, name, description}} */
 
-companiesRouter.get("/:code",
-  async function (req, res) {
-    const code = req.params.code;
+companiesRouter.get("/:code", async function (req, res) {
+  const code = req.params.code;
 
-    const results = await db.query(
-      `SELECT code, name, description
+  const results = await db.query(
+    `SELECT code, name, description
                 FROM companies
                 WHERE code = $1`, [code]);
-    const company = results.rows[0];
-    console.log("company=", company)
+  const company = results.rows[0];
+  console.log("company=", company);
 
-    if (!company) throw new NotFoundError(`No matching company: ${code}`);
-    return res.json({ company: company });
+  if (!company) throw new NotFoundError(`No matching company: ${code}`);
+  return res.json({ company: company });
 });
 
-companiesRouter.delete("/:id", async function (req, res, next) {
-  const id = req.params.id;
-  const results = await db.query(
-    "DELETE FROM cats WHERE id = $1 RETURNING id", [id]);
-  const cat = results.rows[0];
+/** POST/ - create company from data; -
+ * return {company:{code, name, description}}  */
 
-  if (!cat) throw new NotFoundError(`No matching cat: ${id}`);
-  return res.json({ message: "Cat deleted" });
+companiesRouter.post("/", async function (req, res) {
+  const { code, name, description } = req.body;
+  const results = await db.query(
+    `INSERT INTO companies (code,name,description)
+         VALUES ($1,$2,$3)
+         RETURNING code, name,description`,
+    [code, name, description]);
+  const company = results.rows[0];
+
+  return res.status(201).json({ company: company });
+});
+/** PUT/[code] -updates company name, description returns
+ * {company:{code, name, description}  */
+
+companiesRouter.put("/:code", async function (req, res) {
+  if ("code" in req.body) throw new BadRequestError("Not allowed");
+
+  const code = req.params.code;
+
+  const results = await db.query(
+    `UPDATE companies
+         SET name=$1,
+         description =$3
+         WHERE code = $2
+         RETURNING code, name,description`,
+    [req.body.name, code, req.body.description]);
+  const company = results.rows[0];
+
+  if (!company) throw new NotFoundError(`No matching code: ${id}`);
+  return res.json({ company: company });
+});
+
+
+/** DELETE/[code] - deletes company from database
+ * -returns { status: "code deleted" }   */
+
+companiesRouter.delete("/:code", async function (req, res) {
+  const code = req.params.code;
+  const results = await db.query(
+    "DELETE FROM companies WHERE code = $1 RETURNING code", [code]);
+  const company = results.rows[0];
+
+  if (!company) throw new NotFoundError(`No matching code: ${code}`);
+  return res.json({ status: "code deleted" });
 });
 
 module.exports = companiesRouter;
