@@ -11,7 +11,17 @@ companiesRouter.get("/", async function (req,res){
   return res.json({companies})
 })
 
+companiesRouter.get("/:code",
+  async function (req, res) {
+    const type = req.query.type;
 
+    const results = await db.query(
+      `SELECT code, name, description
+               FROM companies
+               WHERE type = $1`, [type]);
+    const company = results.rows;
+    return res.json({ company: company });
+});
 
 companiesRouter.delete("/:id", async function (req, res, next) {
   const id = req.params.id;
