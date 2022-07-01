@@ -1,4 +1,4 @@
-"use strict"
+"use strict";
 const express = require("express");
 const db = require("../db");
 
@@ -16,21 +16,25 @@ companiesRouter.get("/", async function (req, res) {
 
   return res.json({ companies });
 });
-/** GET/[code] - return data about one company
- * {company:{code, name, description}} */
 
+/** GET/[code] - return data about one company and its invoices
+ * {company: {code, name, description, invoices: [id, ...]}} */
 companiesRouter.get("/:code", async function (req, res) {
   const code = req.params.code;
-
-  const results = await db.query(
+  const cResults = await db.query(
     `SELECT code, name, description
                 FROM companies
                 WHERE code = $1`, [code]);
-  const company = results.rows[0];
-  console.log("company=", company);
+  const company = cResults.rows[0];
 
+  const results = await db.query(
+    `SELECT id, comp_code, amt, paid, add_date, paid_date
+                FROM invoices
+                WHERE comp_code = $1`, [code]);
+  company.invoices = results.rows.map(i => i);
   if (!company) throw new NotFoundError(`No matching company: ${code}`);
-  return res.json({ company: company });
+
+  return res.json({ company });
 });
 
 /** POST/ - create company from data; -
@@ -81,5 +85,7 @@ companiesRouter.delete("/:code", async function (req, res) {
   if (!company) throw new NotFoundError(`No matching code: ${code}`);
   return res.json({ status: "code deleted" });
 });
+
+
 
 module.exports = companiesRouter;
