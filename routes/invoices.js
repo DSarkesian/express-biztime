@@ -21,7 +21,7 @@ invoicesRouter.get("/", async function (req, res) {
  *      company: {code, name, description}} */
 
  invoicesRouter.get("/:id", async function (req, res) {
-    const id = req.params.id;
+    const id = NUmber(req.params.id);
 
     const results = await db.query(
       `SELECT id, comp_code, amt, paid, add_date, paid_date
@@ -63,7 +63,7 @@ invoicesRouter.get("/", async function (req, res) {
 
 invoicesRouter.put("/:id", async function (req, res) {
   if ("id" in req.body) throw new BadRequestError("Not allowed");
-
+//todo number
   const id = req.params.id;
 
   const results = await db.query(
@@ -71,7 +71,7 @@ invoicesRouter.put("/:id", async function (req, res) {
          SET amt=$1
          WHERE id = $2
          RETURNING id,comp_code, amt, paid, add_date, paid_date`,
-    [req.body.amt,id]);
+    [req.body.amt, id]);
   const invoice = results.rows[0];
 
   if (!invoice) throw new NotFoundError(`No matching invoice: ${id}`);

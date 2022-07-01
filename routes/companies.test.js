@@ -22,8 +22,14 @@ describe("GET/companies/", function() {
     })
 });
 
+describe("GET/companies/[code]", function(){
+    testCompanies("gets single company", async function() {
+        const resp = await request(app).get(`/companies/tcomp`);
+        expect(resp.body).toEqual({company:testCompanies})
+    })
+})
+
 afterAll(async function () {
     // close db connection --- if you forget this, Jest will hang
     await db.end();
   });
-  
